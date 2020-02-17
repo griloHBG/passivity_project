@@ -1,0 +1,36 @@
+@startuml
+
+package NodePDO
+{
+    enum PDOType
+    {
+        RX
+        TX
+    }
+
+    class NodePDO
+    {
+        -_address
+        -_payloadMap
+        -_payload
+        -_pdoType
+        -_PDOnumber
+        +NodePDO(cob_id, payload, pdoType)
+        +getPayloadMap()
+        +getPdoType()
+        +getNumber()
+        +getAddress()
+        +toString()
+        //convert to readable stuff (and types...)
+        +**getValue(pdoIndex, payloadIndex)**
+    }
+}
+class CANopenNode
+{
+    array<NodePDO, 4> txPDO
+    array<NodePDO, 4> rxPDO
+    **dictionarySDO??**
+
+}
+
+@enduml
