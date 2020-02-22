@@ -14,6 +14,7 @@
 #include "CANopenCommunication.h"
 #include <cmath>
 #include <cstring>
+#include <getopt.h>
 
 #define SLEEP_ms(ms) std::this_thread::sleep_for(std::chrono::milliseconds(ms))
 
@@ -36,20 +37,32 @@ std::string printCANframe(const CANframe& frame)
 
 int main(int argc, char** argv)
 {
-    bool noPrint = false;
+    int opt;
+    bool print = false;
+    bool maxTime_ms = 2000;
     
-    std::cout << "argc = " << argc << std::endl;
+    /*char a[] = ["coisa", "-p"];
+    char c[] = "-t";
+    char d[] = "3000";
     
-    for (int i = 0; i < argc; i++)
+    argv = &a;
+    
+    while(opt=getopt(argc, argv, "pt:")!=-1)
     {
-        std::cout << "argv[" << i << "] = " << argv[i] << std::endl;
-    }
-    
-    if(argc > 1)
-    {
-        std::cout << "NO PRINT!" << std::endl;
-        noPrint = (std::strcmp(argv[1], "noprint") == 0);
-    }
+        switch (opt)
+        {
+            case 'p':
+                print = true;
+                break;
+            case 't':
+                maxTime_ms = atoi(optarg);
+                break;
+            default: // '?'
+                fprintf(stderr, "Usage: %s [-p] [-t msecs]\n",
+                        argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }*/
     
     std::cout.setf(std::ios::unitbuf);
     
@@ -111,20 +124,29 @@ int main(int argc, char** argv)
     //Set Position Mode Setting Value (0x2062)
     std::cout << printCANframe(canopenComm.sendSDO(node1, true, 0x2062, 0x00, CANopenDataType::INT32, 0));
     
-    std::cout << "no print? R: " << (noPrint? "YES!" : "NO!") << std::endl;
+    std::cout << "print? R: " << (print ? "YES!" : "NO!") << std::endl;
     
-    for(int p = 0; p < 4000; p++)
+    int64_t startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    
+    int64_t myTime = 0;
+    
+    for(int p = 0 ; p < 4000 && myTime < maxTime_ms; p++)
     {
-        if(noPrint)
+        if(print)
         {
-            canopenComm.sendSDO(node1, true, 0x2062, 0x00, CANopenDataType::INT32, 200*sin(p/50.0));
+            std::cout << printCANframe(canopenComm.sendSDO(node1, true, 0x2062, 0x00, CANopenDataType::INT32, round(200*sin(p/50.0))));
         }
         else
         {
-            std::cout << printCANframe(canopenComm.sendSDO(node1, true, 0x2062, 0x00, CANopenDataType::INT32, 200*sin(p/50.0)));
+            std::cout << std::setw(5) << myTime << std::setw(10) << 200*sin(myTime * M_PI/1000.0) << std::endl;
+            myTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
+            canopenComm.sendSDO(node1, true, 0x2062, 0x00, CANopenDataType::INT32, round(200*sin(myTime * M_PI/1000.0)));
+            p--;
         }
         
     }
+    
+    std::cout << myTime << std::endl;
     
     SLEEP_ms(100);
     
@@ -139,7 +161,7 @@ int main(int argc, char** argv)
         if(node1.hasNews())
         {
             msg_count++;
-            std::cout << node1.PDOproperties().str() << std::endl;
+            std::cout << node1.allPDOtoString().str() << std::endl;
         }
         else
         {

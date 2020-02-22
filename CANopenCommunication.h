@@ -19,30 +19,64 @@
 
 class CANopenCommunication {
 public:
+    ///maximum amount of nodes in a CANopen network
     static const uint8_t MAX_NODES_NUM = 0x7F;
+    
+    /// Ctor for CANopen communication
+    /// \param device name of device (e.g. can0, can1, dcan0, vcan1 etc)
+    /// \param startComm should the communication be start?
     CANopenCommunication(const std::string &device, bool startComm);
+    
+    /// Dtor
     ~CANopenCommunication();
+    
+    /// Function to append node to the network
+    /// \param node reference to node
+    /// \return indicator if node was added
+    //TODO return is working?
     bool AppendNode(CANopenNode& node);
+    
+    /// send NMT message with command to node
+    /// \param node node to receive the command
+    /// \param command command to send to node
+    /// \return not used
+    //TODO maybe use the return?
     bool sendNMT(int node, NMTCOMMAND command);
+    
+    /// send PDO message to node
+    /// \param node node to send PDO message
+    /// \param PDOnumber which PDO to send to node
+    /// \return dont know
+    //TODO implement it? maybe only in a possible child of this class?
     bool sendPDO(int node, int PDOnumber);
+    
+    /// Send SDO message to node
+    /// \param node which node
+    /// \param doWrite write (download from client to server) or read (upload from server to client)
+    /// \param index object index from dictionary
+    /// \param subindex object subindex from dictionary
+    /// \param dataType data type to be sent or read
+    /// \param value value to be sent
+    /// \return the CANframe that can be sent through CAN bus
     CANframe sendSDO(const CANopenNode& node, const bool& doWrite, const uint16_t& index, const uint8_t& subindex, const CANopenDataType& dataType, const int& value);
+    
+    /// receive NMT message (needed?)
+    /// \param node which node (???)
+    /// \return what??
+    //TODO necessary?
     bool recvNMT(int node);
+    
+    /// receive SDO message (?!)
+    /// \param node
+    /// \return
+    //TODO what to do with it?
     bool recvSDO(int node);
     
+    /// actually start the communication
+    /// \return
     bool startCommunication();
 
 private:
-    /* useless?
-    std::array<CANopenNode*, 127> _usedRxPasdasdasdasdasdDO1;
-    std::array<CANopenNode*, 127> _usedRxPDO2;
-    std::array<CANopenNode*, 127> _usedRxPDO3;
-    std::array<CANopenNode*, 127> _usedRxPDO4;
-    
-    std::array<CANopenNode*, 127> _usedTxPDO1;
-    std::array<CANopenNode*, 127> _usedTxPDO2;
-    std::array<CANopenNode*, 127> _usedTxPDO3;
-    std::array<CANopenNode*, 127> _usedTxPDO4;
-     */
     
     std::array<CANopenNode*, 127> _nodes;
     
@@ -99,8 +133,6 @@ private:
     
     ///the receive function for thre receive thread
     void _recvThread();
-    ///function to organize received message
-    void _messageOrganizer();
     
 };
 

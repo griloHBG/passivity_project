@@ -6,46 +6,18 @@
 
 std::stringstream PDOpart::toString() const
 {
+    // it's straightforward
     std::stringstream ss;
-    ss << std::setw(2) << static_cast<uint16_t>(_index)
-       << std::setw(20) << _description;
-    
-    std::string type;
-    switch(_dataType)
-    {
-        case CANopenDataType::INT8:
-            type = "INT8";
-            break;
-        case CANopenDataType::INT16:
-            type = "INT16";
-            break;
-        case CANopenDataType::INT32:
-            type = "INT32";
-            break;
-        case CANopenDataType::UINT8:
-            type = "UINT8";
-            break;
-        case CANopenDataType::UINT16:
-            type = "UINT16";
-            break;
-        case CANopenDataType::UINT32:
-            type = "UINT32";
-            break;
-        case CANopenDataType::STRING:
-            type = "STRING";
-            break;
-        case CANopenDataType::UINT64:
-            type = "UINT64";
-            break;
-    }
-    
-    ss << std::setw(7) << type;
+    ss  << std::setw(2)  << static_cast<uint16_t>(_index)
+        << std::setw(20) << _description
+        << std::setw(7)  << _dataTypeName;
     
     return ss;
 }
 
 PDOpart::PDOpart(int8_t index, const std::string &description, CANopenDataType dataType) : _index(index), _description(description), _dataType(dataType)
 {
+    //setting type name and size
     switch(dataType)
     {
         case CANopenDataType::INT8:
@@ -88,7 +60,7 @@ int8_t PDOpart::getIndex() const
     return _index;
 }
 
-const std::string &PDOpart::getDescription() const
+std::string PDOpart::getDescription() const
 {
     return _description;
 }

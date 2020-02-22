@@ -3,7 +3,6 @@
 //
 
 #include "CANopenNode.h"
-#include <cassert>
 #include <sstream>
 #include <iomanip>
 
@@ -32,6 +31,7 @@ bool CANopenNode::Transition(const CANopenNodeEvent event)
     return false;
 }
 */
+
 std::array<unsigned int, 4> CANopenNode::getTxPDO_COB_ID() const
 {
     std::array<unsigned int, 4> cob_ids{};
@@ -55,23 +55,26 @@ std::array<unsigned int, 4> CANopenNode::getRxPDO_COB_ID() const
 }
 
 CANopenNode::CANopenNode(uint8_t address,
-                        std::array<NodePDO, 4>&& txPdOarray,
-                        std::array<NodePDO, 4>&& rxPdOarray):
-        _address(address), _txPDOarrayInterface(txPdOarray),
-        _rxPDOarrayInterface(rxPdOarray)
+                        std::array<NodePDO, 4>&& txPDOarray,
+                        std::array<NodePDO, 4>&& rxPDOarray):
+        _address(address), _txPDOarrayInterface(txPDOarray),
+        _rxPDOarrayInterface(rxPDOarray)
 {}
 
 uint8_t CANopenNode::getAddress() const
 {
     return _address;
-}CANopenNode::CANopenNode(const CANopenNode &otherNode)
+}
+
+CANopenNode::CANopenNode(const CANopenNode &otherNode)
         : _address(otherNode._address), _mode(otherNode._mode), _rxPDOarrayInterface(otherNode._rxPDOarrayInterface), _txPDOarrayInterface(otherNode._txPDOarrayInterface)
 {
     throw std::invalid_argument("COOOPY! (CANopenNode.cpp:" + std::to_string(__LINE__));
 }
 
-void CANopenNode::update(CANframe frame)
+/*void CANopenNode::update(CANframe frame)
 {
+    // store the received frame from CAN bus to in the right place
     switch(frame.can_id >> 7)
     {
         case SEND_PDO1:
@@ -90,10 +93,11 @@ void CANopenNode::update(CANframe frame)
             //TODO
             break;
     }
-}
+}*/
 
 void CANopenNode::update(CANframe&& frame)
 {
+    //TODO evaluate frame's address
     switch(frame.can_id >> 7)
     {
         case SEND_PDO1:
@@ -116,15 +120,20 @@ void CANopenNode::update(CANframe&& frame)
 
 bool CANopenNode::hasNews()
 {
+    // a lot useless. for now
+    //TODO THIS IS USELESS
     return _hasNews;
 }
 
-std::stringstream CANopenNode::PDOproperties()
+std::stringstream CANopenNode::allPDOtoString()
 {
+    // the returning string stream
     std::stringstream ret;
     
+    // counters
     int pdoIndex = 0, partIndex = 0;
     
+    // for each
     for(pdoIndex = 0; pdoIndex < 4; pdoIndex++)
     {
         for(partIndex = 0; partIndex < _txPDOvalues.at(pdoIndex).size(); partIndex++)

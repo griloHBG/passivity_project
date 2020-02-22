@@ -10,6 +10,7 @@
 
 NodePDO::NodePDO(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpart> &payload) : _pdoType(pdoType), _address(cob_id)
 {
+    //discover the PDO number according the cob_id and the PDO type
     if(_pdoType == PDOType::TX)
     {
         if(0x181 <= cob_id && cob_id <= 0x01FF)
@@ -34,6 +35,7 @@ NodePDO::NodePDO(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpa
         }
         else //fail!
         {
+            //if non of the above, something is wrong
             std::stringstream errorss;
             errorss << "COB-ID " << TO_HEX(cob_id) << " for txPDO not valid!\n"
                                                       "Valid ranges: [0x0181, 0x01FF] for txPDO1 or "
@@ -77,14 +79,18 @@ NodePDO::NodePDO(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpa
         }
     }
     
+    //store payload configuration
     _payloadStruct = payload;
+    //calculate useful PDO size in bytes
     _size = 0;
+    //look at PDO configuration to get the payload size
     for(int8_t i = 0; i < _payloadStruct.size(); i++)
     {
         _size += _payloadStruct[i].getDataTypeSize();
     }
     
-    if(_size > 8)
+    //size must be from 1 to 8 bytes
+    if(_size > 8 || _size < 1)
     {
         throw std::invalid_argument("Received Payload Struct sums more than 8 bytes (it is summing " + std::to_string(_size) + ")!");
     }
@@ -111,18 +117,19 @@ std::string NodePDO::toString() const
 {
     std::stringstream ret;
     
-    ret << (_pdoType == PDOType::RX ? "rx" : "tx") << "PDO" << static_cast<int16_t>(_PDOnumber) << std::setw(7) << TO_HEX(_address) << std::endl;
+    //prints if is receive or transmit
+    ret << (_pdoType == PDOType::RX ? "rx" : "tx")
+    //and its number
+        << "PDO" << static_cast<int16_t>(_PDOnumber)
+    //and its address
+        << std::setw(7) << TO_HEX(_address)
+        << std::endl;
     
-    uint8_t last = -1;
-    uint8_t currentSize = 0;
-    
+    //and each one of its parts
     for(auto p: _payloadStruct)
     {
         ret << p.toString().str() << "\n";
     }
-    
-    //ret << std::setw(2) << static_cast<uint16_t>(last) << std::setw(20) << _payloadMap.at(last) << " size " << static_cast<uint16_t>(currentSize) << " bytes" << std::endl;
-    
     
     return ret.str();
 }
@@ -132,37 +139,43 @@ const std::vector<PDOpart>& NodePDO::getPayloadMap() const
     return _payloadStruct;
 }
 
-/*
-const std::array<signed char, 8> &NodePDO::getPayload() const
-{
-    return _payload;
-}
- */
-
 std::vector<int> NodePDO::valuesFromPayload(const CANframe& frame) const
 {
+    //there's no need of convert from payload to values in a transmit PDO
     if(_pdoType == PDOType::RX)
     {
         throw std::invalid_argument("This is NOT a txPDO! This is a rxPDO! (NodePDO.cpp:" + std::to_string(__LINE__) + ")\n");
     }
     
+    //the return to be readable vector of values
     std::vector<int> ret;
     
-    int lastIndex = -1;
-    int aux;
+    //will store the value (and its partial values)
+    int currentValue;
+    //the index of the current frame
     int frameIndex = 0;
+    //counter for the bytes of a PDOpart
+    int byteIndex = 0;
     
+    //for each part of this PDO
     for(auto pdoPart : _payloadStruct)
     {
-        aux = 0;
+        //reset currentValue
+        currentValue = 0;
         
-        for(int i = 0; i < pdoPart.getDataTypeSize(); i++)
+        //walking through the PDOpart
+        for(byteIndex = 0; byteIndex < pdoPart.getDataTypeSize(); byteIndex++)
         {
-            aux = aux + (frame.data[frameIndex++] << (8*i));
+            //each value is store in Les Significant BYTE first fashion,
+            //so each byte is left shift for 8*byteIndex bit positions and then is summed up to th currentValue
+            currentValue = currentValue + (frame.data[frameIndex++] << (8 * byteIndex));
         }
         
-        ret.push_back(aux);
+        //storing in the return vector
+        ret.push_back(currentValue);
     }
+    
+    //return the stuff
     return ret;
 }
 
