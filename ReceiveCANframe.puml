@@ -1,0 +1,8 @@
+@startuml
+"CAN bus" ->"CANopenCOmmunication\n::_recvThread" : **read()**\nincoming CANopen\nmessage
+"CANopenCOmmunication\n::_recvThread" -> CANopenNode : **_node.update()**\nmove message to\nrespective node
+CANopenNode -> NodePDO: **valuesFromPayload()**\n converts the payload\nframe to readable values
+'NodePDO -> PDOPart: uses PDOPart\nconfig to conversion
+PDOPart -> NodePDO: **getDataTypeSize()**\nhelp with configured\nparameters
+NodePDO -> CANopenNode: **values <- valuesFromPayload()**\nstore value inside the respective\n_txPDOvalues array
+@enduml

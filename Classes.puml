@@ -1,36 +1,164 @@
 @startuml
 
-package NodePDO
+class NodePDO
 {
-    enum PDOType
-    {
-        RX
-        TX
-    }
-
-    class NodePDO
-    {
-        -_address
-        -_payloadMap
-        -_payload
-        -_pdoType
-        -_PDOnumber
-        +NodePDO(cob_id, payload, pdoType)
-        +getPayloadMap()
-        +getPdoType()
-        +getNumber()
-        +getAddress()
-        +toString()
-        //convert to readable stuff (and types...)
-        +**getValue(pdoIndex, payloadIndex)**
-    }
+    -_address
+    -_payloadStruct
+    -_pdoType
+    -_PDOnumber
+    -_size
+    -_payloadFromValues()
+    +NodePDO()
+    +getPayloadMap()
+    +getPdoType()
+    +getNumber()
+    +getAddress()
+    +toString()
+    +valuesFromPayload()
+    +payloadFromValues()
+    +at()
 }
+
 class CANopenNode
 {
-    array<NodePDO, 4> txPDO
-    array<NodePDO, 4> rxPDO
-    **dictionarySDO??**
-
+    +CANopenNode()
+    +getTxPDO_COB_ID()
+    +getRxPDO_COB_ID()
+    +getAddress()
+    +update()
+    +hasNews()
+    +allPDOtoString()
+    -_address
+    -_mode
+    -_txPDOarrayInterface
+    -_rxPDOarrayInterface
+    -_txPDOvalues
+    -_rxPDOValues
+    -_hasNews
 }
 
+class CANopenCommunication
+{
+    +MAX_NODES_NUM
+    +CANopenCommunication()
+    +~CANopenCommunication()
+    +AppendNode()
+    +sendNMT()
+    +sendPDO()
+    +sendSDO()
+    +recvNMT()
+    +recvSDO()
+    +startCommunication()
+    -_nodes
+    -_device
+    -_address
+    -_ifreq
+    -_txPDO
+    -_rxPDO
+    -_txSDO
+    -_rxSDO
+    -_txNMT
+    -_rxNMT
+    -_txInternalCANframe
+    -_rxInternalCANframe
+    -_txinternalCANframe_mtx
+    -_rxinternalCANframe_mtx
+    -_txNMT_mtx
+    -_rxNMT_mtx
+    -_txSDO_mtx
+    -_rxSDO_mtx
+    -_txPDO_mtx
+    -_rxPDO_mtx
+    -_commSocket_mtx
+    -_keepReceiveAlive
+    -_recvThread()
+}
+
+class PDOpart
+{
+    +PDOpart
+    +toString()
+    +getIndex()
+    +getDescription()
+    +getDataTypeSize()
+    +getDataTypeName()
+    -_dataType
+    -_dataTypeSize
+    -_index
+    -_description
+}
+
+CANopenCommunication -right- CANopenNode : use
+CANopenNode "1" *-right- "4 Rx and 4 Tx" NodePDO : contains
+NodePDO "1" *-right- "1..8" PDOpart : contains
+
+package CANopenTypes
+{
+    enum FUNC_CODE
+    {
+        NMT         = 0x00
+        SYNC        = 0x01
+        EMCY        = 0x01
+        TIME        = 0x02
+        --
+        SEND_PDO1   = 0x03
+        RECV_PDO1   = 0x04
+        SEND_PDO2   = 0x05
+        RECV_PDO2   = 0x06
+        SEND_PDO3   = 0x07
+        RECV_PDO3   = 0x08
+        SEND_PDO4   = 0x09
+        RECV_PDO4   = 0x10
+        --
+        SEND_SDO    = 0x11
+        RECV_SDO    = 0x12
+        --
+        HEARTBEAT = 0x14
+    }
+    enum NMTCOMMAND
+    {
+        OPERATIONAL = 0x01
+        STOPPED = 0x02
+        PREOPERATIONAL = 0x80
+        RESET_APPLICATION = 0x81
+        RESET_COMMUNICATION = 0x82
+    }
+
+    enum CANopenNodeMode
+    {
+        IS_INITIALIZATED
+        IS_PREOPERATIONAL
+        IS_OPERATIONAL
+        IS_STOPPED
+        UNKOWN
+    }
+
+    enum CANopenNodeEvent
+    {
+        SET_PREOP
+        SET_OP
+        SET_STOP
+        SET_INIT
+    }
+
+    enum PDOType
+    {
+        TX
+        RX
+    }
+
+    enum CANopenDataType
+    {
+        INT8 = 0x02
+        INT16 = 0x03
+        INT32 = 0x04
+
+        UINT8 = 0x05
+        UINT16 = 0x06
+        UINT32 = 0x07
+
+        STRING = 0x09
+        UINT64 = 0x1B
+    }
+}
 @enduml

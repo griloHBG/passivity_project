@@ -78,6 +78,7 @@ public:
 
 private:
     
+    ///Every node that can be added to the network
     std::array<CANopenNode*, 127> _nodes;
     
     ///linux CAN device name (like can0, can1, dcan0 etc)
@@ -101,10 +102,10 @@ private:
     CANframe _txNMT;
     ///current NMT message received
     CANframe _rxNMT;
-    ///variable that receives any CAN message received. Always overrided by the next reception
-    CANframe _rxinternalCANframe;
     ///TODO variable used to transmit any CAN message. Is this needed?!
     CANframe _txinternalCANframe;
+    ///variable that receives any CAN message received. Always overrided by the next reception
+    CANframe _rxinternalCANframe;
     
     ///mutex for _txinternalCANframe
     std::mutex _txinternalCANframe_mtx;
@@ -127,8 +128,7 @@ private:
     
     ///thread object to hold receive thread
     std::thread _threadRecv;
-    ///thread object to hold function message receiving
-    std::thread _organizeMessasge;
+    
     bool _keepReceiveAlive;
     
     ///the receive function for thre receive thread

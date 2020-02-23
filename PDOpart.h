@@ -21,7 +21,6 @@ public:
     /// \return the explained string
     std::stringstream toString() const;
     
-public:
     /// Getter for the index
     /// \return PDOpart's index inside the PDO
     int8_t getIndex() const;
