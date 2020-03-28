@@ -9,13 +9,12 @@
 #include <sys/socket.h>         //socket(), AF_CAN,
 #include <linux/can.h>          //struct can_frame, struct sockaddr_can,
 #include <net/if.h>             //struct ifreq,
-#include <string.h>             //strcpy(),
+#include <cstring>             //strcpy(),
 #include <sys/ioctl.h>          //ioctl(), SIOCGIFINDEX,
-#include <mutex>
-#include <thread>
-#include <vector>
+#include <mutex>                //mutex
+#include <thread>               //thread
+#include <vector>               //vector
 #include "CANopenNode.h"
-#define IS_RXPDO(can_id)
 
 class CANopenCommunication {
 public:
@@ -25,7 +24,7 @@ public:
     /// Ctor for CANopen communication
     /// \param device name of device (e.g. can0, can1, dcan0, vcan1 etc)
     /// \param startComm should the communication be start?
-    CANopenCommunication(const std::string &device, bool startComm);
+    CANopenCommunication(const std::string &device, bool startComm = false);
     
     /// Dtor
     ~CANopenCommunication();
@@ -34,7 +33,7 @@ public:
     /// \param node reference to node
     /// \return indicator if node was added
     //TODO return is working?
-    bool AppendNode(CANopenNode& node);
+    bool AppendNode(CANopenNode *node);
     
     /// send NMT message with command to node
     /// \param node node to receive the command
@@ -58,7 +57,7 @@ public:
     /// \param dataType data type to be sent or read
     /// \param value value to be sent
     /// \return the CANframe that can be sent through CAN bus
-    CANframe sendSDO(const CANopenNode& node, const bool& doWrite, const uint16_t& index, const uint8_t& subindex, const CANopenDataType& dataType, const int& value);
+    CANframe sendSDO(const CANopenNode &node, const bool &doWrite, const IndexSubindex& indexSubIndex, const CANopenDataType &dataType, const int &value);
     
     /// receive NMT message (needed?)
     /// \param node which node (???)
@@ -131,9 +130,8 @@ private:
     
     bool _keepReceiveAlive;
     
-    ///the receive function for thre receive thread
+    ///the receive function for the receive thread
     void _recvThread();
-    
 };
 
 

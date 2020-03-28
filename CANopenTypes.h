@@ -7,16 +7,21 @@
 
 #include <sstream>
 #include <iomanip>
+#include <linux/can.h>
+#include <map>
 
 typedef int Socket;
 typedef struct sockaddr_can CANaddress;
 typedef struct sockaddr Address;
 typedef struct ifreq InterfRequest;
 typedef struct can_frame CANframe;
+typedef uint32_t IndexSubindex;
 
 const int INDEX = 0;
 const int NAME = 1;
 const int SIZE = 2;
+
+#define TO_HEX(var) std::hex << "0x" << std::uppercase << var << std::dec << std::nouppercase
 
 ///Function Code for each type of message
 enum FUNC_CODE: uint8_t
@@ -45,15 +50,15 @@ enum FUNC_CODE: uint8_t
     ///TXPDO4 message
     SEND_PDO4   = 0x09,
     ///RXPDO4 message
-    RECV_PDO4   = 0x10,
+    RECV_PDO4   = 0x0A,
     
     ///Send SDO message
-    SEND_SDO    = 0x11,
+    SEND_SDO    = 0x0B,
     ///Receive SDO message
-    RECV_SDO    = 0x12,
+    RECV_SDO    = 0x0C,
     
     ///Heartbeat message
-    HEARTBEAT = 0x14,
+    HEARTBEAT = 0x0D,
 };
 
 ///Each type of NMT command
@@ -130,7 +135,7 @@ enum CANopenDataType: uint8_t
 /// Turn DataType enumeration into string
 /// \param type data type enum
 /// \return readable string representing data type
-std::string CANopenDataTypeToString(CANopenDataType type)
+inline std::string CANopenDataTypeToString(CANopenDataType type)
 {
     std::string ret;
     
@@ -164,5 +169,37 @@ std::string CANopenDataTypeToString(CANopenDataType type)
     
     ret;
 }
+
+/*typedef struct IndexSubindex
+{
+    bool operator==(const struct IndexSubindex& other) const
+    {
+        return (index == other.index) && (subindex == other.subindex);
+    }
+    bool operator<(const struct IndexSubindex& other) const
+    {
+        return (index < other.index) && (subindex < other.subindex);
+    }
+    
+    uint16_t index;
+    uint8_t subindex;
+    
+} IndexSubindex;*/
+
+inline IndexSubindex toIndexSubindex (const uint16_t& index, const uint8_t& subindex)
+{
+    return (index << 8) | (subindex);
+}
+
+typedef std::string Description;
+
+#define VALUE 0
+#define TYPE 1
+#define INDEXSUBINDEX 2
+#define DESCRIPTION 3
+typedef std::tuple<int, CANopenDataType, IndexSubindex, Description> DictionaryEntry;
+
+typedef std::map<IndexSubindex, DictionaryEntry> ObjectsDictionary;
+
 
 #endif //PASSIVITY_PROJECT_CANOPENTYPES_H

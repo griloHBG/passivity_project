@@ -15,7 +15,8 @@ std::stringstream PDOpart::toString() const
     return ss;
 }
 
-PDOpart::PDOpart(int8_t index, const std::string &description, CANopenDataType dataType) : _index(index), _description(description), _dataType(dataType)
+PDOpart::PDOpart(int8_t index, const std::string &description, CANopenDataType dataType,
+                 DictionaryEntry& dictionaryEntry) : _index(index), _description(description), _dataType(dataType), _dictionaryEntry(dictionaryEntry)
 {
     //setting type name and size
     switch(dataType)
@@ -78,4 +79,33 @@ uint8_t PDOpart::getDataTypeSize() const
 const std::string &PDOpart::getDataTypeName() const
 {
     return _dataTypeName;
+}
+
+PDOpart::PDOpart(): _index(0), _description(""), _dataType(CANopenDataType::INT8), _dataTypeName(""), _dataTypeSize(0), _dictionaryEntry(
+        const_cast<DictionaryEntry &>(dummy))
+{
+}
+
+int& PDOpart::getDictionaryEntryValueRef()
+{
+    if(_dictionaryEntry == dummy)
+    {
+        throw std::runtime_error("This PDOpart has no _dictonaryEntry yet! (PDOpart.cpp:" + std::to_string(__LINE__) + ")\n");
+    }
+    
+    return std::get<0>(_dictionaryEntry);
+}
+
+PDOpart::PDOpart(const PDOpart &other): _index(other._index), _description(other._description), _dataType(other._dataType), _dataTypeName(other._dataTypeName), _dataTypeSize(other._dataTypeSize), _dictionaryEntry(other._dictionaryEntry)
+{
+}
+
+PDOpart &PDOpart::operator=(const PDOpart& other)
+{
+    /*if (this != &other) { // self-assignment check expected
+        this->dummy
+        }
+        std::copy(other.mArray, other.mArray + other.size, mArray);
+    }*/
+    return *this;
 }

@@ -2,8 +2,8 @@
 // Created by grilo on 02/02/2020.
 //
 
-#ifndef PASSIVITY_PROJECT_NODEPDO_H
-#define PASSIVITY_PROJECT_NODEPDO_H
+#ifndef PASSIVITY_PROJECT_PDOMESSAGE_H
+#define PASSIVITY_PROJECT_PDOMESSAGE_H
 
 
 #include <cstdint>
@@ -11,21 +11,19 @@
 #include <vector>
 #include <linux/can.h>
 #include <iostream>
-#include "CANopenTypes.h"
 #include "PDOpart.h"
 
-#define TO_HEX(var) std::hex << "0x" << std::uppercase << var << std::dec << std::nouppercase
-#define TEST_FOR_INT_TYPE(var, type) static_cast<type>(var) == var ? true : false
-
-class NodePDO
+class PDOmessage
 {
 public:
-    /// Ctor for this NodePDO class
+    /// Ctor for this PDOmessage class
     /// \param pdoType PDO's type: receive (RX) or transmit (TX). From the point of view of the real CANopen node.
     /// \param cob_id composition of the PDO's function (from 0b0011 to 0b1010) and node address
     /// \param payload the configuration of the current PDO using vector of PDO part.
     //TODO: there's no need to enter with cob_id! function is predefined and the address if from the node!
-    NodePDO(PDOType pdoType, uint16_t cob_id, const std::vector<PDOpart> &payload);
+    PDOmessage(PDOType pdoType, uint16_t cob_id, const std::vector<PDOpart> &payload);
+    
+    PDOmessage();
     
     /// Getter to payload mapping. This is the actual PDO configuration
     /// \return vector with this PDO's configuration
@@ -44,23 +42,23 @@ public:
     unsigned int getAddress() const;
     
     /// Converts this PDO to a readable string. Usefull to assure that thaPDO was correctly configured
-    /// \return String explaining this NodePDO configuration
+    /// \return String explaining this PDOmessage configuration
     std::string toString() const;
     
-    /// a main public NodePDO's function used to convert a CanFrame's payload to a readable vector with values, accordingly to the PDO message setup
+    /// a main public PDOmessage's function used to convert a CanFrame's payload to a readable vector with values, accordingly to the PDO message setup
     /// \param frame CANframe to be converted
     /// \return a vector with values according the PDO configuration
     std::vector<int> valuesFromPayload(const CANframe &frame) const;
     
     /*
-    /// a main public NodePDO's function used to convert others to a PDO paylod formating (calls _payloadFromValues(first))
+    /// a main public PDOmessage's function used to convert others to a PDO paylod formating (calls _payloadFromValues(first))
     /// \tparam T1 type of the argument
     /// \param first argument value
     /// \return a vector containing the right PDO payload format
     template<typename T1>
     std::vector<uint8_t> payloadFromValues(T1 first);
     */
-    /// a main public NodePDO's function used to convert others to a PDO paylod formating (calls _payloadFromValues(first,... others))
+    /// a main public PDOmessage's function used to convert others to a PDO paylod formating (calls _payloadFromValues(first,... others))
     /// \tparam T1 type of the first argument
     /// \tparam Tn types of the others arguments
     /// \param first first argument value
@@ -74,19 +72,25 @@ public:
     /// \return the PDO part wanted
     const PDOpart& at(int index) const;
     
+    uint8_t getSize();
+    
 private:
     ///PDO's address
     uint16_t _address;
+    
     ///Stores how the PDO is configured (index position, size, description...)
     std::vector<PDOpart> _payloadStruct;
+    
     ///PDO type of this object (transmit or receive)
     PDOType _pdoType;
+    
     ///PDO's number (PDO1, PDO2, PDO3 or PDO4)
     unsigned char _PDOnumber;
+    
     ///Actual PDO size (less or equal than 8 bytes)
     uint8_t _size;
     
-    /// a main private NodePDO's function used to convert others to a PDO paylod formating
+    /// a main private PDOmessage's function used to convert others to a PDO paylod formating
     /// \tparam T1 type of the first argument
     /// \tparam Tn types of the others arguments
     /// \param currentIndexToUse stores which PDO payload position should be used
@@ -96,7 +100,7 @@ private:
     template<typename T1, typename... Tn>
     std::vector<uint8_t> _payloadFromValues(uint8_t& currentIndexToUse, T1 first, Tn... others);
     
-    /// a main private NodePDO's function used to convert others to a PDO paylod formating
+    /// a main private PDOmessage's function used to convert others to a PDO paylod formating
     /// \tparam T1 type of the argument
     /// \param currentIndexToUse
     /// \param first argument value
@@ -106,12 +110,12 @@ private:
 };
 /*
 template<typename T1>
-std::vector<uint8_t> NodePDO::payloadFromValues(T1 first)
+std::vector<uint8_t> PDOmessage::payloadFromValues(T1 first)
 {
     //there is no need to convert from value to payload on a transmit PDO
     if(_pdoType == PDOType::TX)
     {
-        throw std::invalid_argument("This is NOT a rxPDO! This is a txPDO!\n");
+        throw std::invalid_argument("This is NOT a rxPDO! This is a txPDO! (PDOmessage.h:" + std::to_string(__LINE__) + ")\n");
     }
     
     //of course stuff will start on index 0;
@@ -125,7 +129,7 @@ std::vector<uint8_t> NodePDO::payloadFromValues(T1 first)
     if(ret.size() < _size)
     {
         //print stuff
-        throw std::invalid_argument("Only " + std::to_string(ret.size()) + " out of " + std::to_string(_size) + " bytes were filled! Not good!");
+        throw std::invalid_argument("Only " + std::to_string(ret.size()) + " out of " + std::to_string(_size) + " bytes were filled! Not good! (PDOmessage.h:" + std::to_string(__LINE__) + ")\n");
     }
     
     //fill with zeros the unused part of PDO's payload
@@ -138,12 +142,12 @@ std::vector<uint8_t> NodePDO::payloadFromValues(T1 first)
 }
 */
 template<typename... Tn>
-std::vector<uint8_t> NodePDO::payloadFromValues(Tn... allValues)
+std::vector<uint8_t> PDOmessage::payloadFromValues(Tn... allValues)
 {
     //there is no need to convert from value to payload on a transmit PDO
     if(_pdoType == PDOType::TX)
     {
-        throw std::invalid_argument("This is NOT a rxPDO! This is a txPDO!\n");
+        throw std::invalid_argument("This is NOT a rxPDO! This is a txPDO! (PDOmessage.h:" + std::to_string(__LINE__) + ")\n");
     }
     
     //of course stuff will start on index 0;
@@ -157,7 +161,7 @@ std::vector<uint8_t> NodePDO::payloadFromValues(Tn... allValues)
     if(ret.size() < _size)
     {
         //print stuff
-        throw std::invalid_argument("Only " + std::to_string(ret.size()) + " out of " + std::to_string(_size) + " bytes were filled! Not good!");
+        throw std::invalid_argument("Only " + std::to_string(ret.size()) + " out of " + std::to_string(_size) + " bytes were filled! Not good! (PDOmessage.h:" + std::to_string(__LINE__) + ")\n");
     }
     
     //fill with zeros the unused part of PDO's payload
@@ -170,7 +174,7 @@ std::vector<uint8_t> NodePDO::payloadFromValues(Tn... allValues)
 }
 
 template<typename T1, typename... Tn>
-std::vector<uint8_t> NodePDO::_payloadFromValues(uint8_t& currentIndexToUse, T1 first, Tn... others)
+std::vector<uint8_t> PDOmessage::_payloadFromValues(uint8_t& currentIndexToUse, T1 first, Tn... others)
 {
     //unpacking the argument "first"
     std::vector<uint8_t> ret = _payloadFromValues(currentIndexToUse, first);
@@ -185,7 +189,7 @@ std::vector<uint8_t> NodePDO::_payloadFromValues(uint8_t& currentIndexToUse, T1 
 }
 
 template<typename T1>
-std::vector<uint8_t> NodePDO::_payloadFromValues(uint8_t& currentIndexToUse, T1 first)
+std::vector<uint8_t> PDOmessage::_payloadFromValues(uint8_t& currentIndexToUse, T1 first)
 {
     //only a shortcut
     const uint8_t& index = currentIndexToUse;
@@ -212,7 +216,7 @@ std::vector<uint8_t> NodePDO::_payloadFromValues(uint8_t& currentIndexToUse, T1 
            << _payloadStruct[index].getDescription() << ") type expected (" << _payloadStruct[index].getDataTypeName()
            << " - " << static_cast<int16_t>(_payloadStruct[index].getDataTypeSize()) << " byte(s) - )!\n";
     
-        throw std::invalid_argument(ss.str());
+        throw std::invalid_argument(ss.str() + "(PDOmessage.h:" + std::to_string(__LINE__) + ")\n");
     }
     
     //return vectir (in RVO -return value optimization - we trust!)
@@ -237,4 +241,4 @@ std::vector<uint8_t> NodePDO::_payloadFromValues(uint8_t& currentIndexToUse, T1 
 }
 
 
-#endif //PASSIVITY_PROJECT_NODEPDO_H
+#endif //PASSIVITY_PROJECT_PDOMESSAGE_H

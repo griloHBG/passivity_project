@@ -3,10 +3,11 @@
 //
 
 #include <iostream>
-#include "CANopenCommunication.h"
 #include <unistd.h>
 #include <vector>
 #include <thread>
+#include "CANopenCommunication.h"
+#include "CANopenUtils.h"
 
 bool CANopenCommunication::startCommunication()
 {
@@ -38,7 +39,7 @@ bool CANopenCommunication::startCommunication()
     _threadRecv = std::thread(&CANopenCommunication::_recvThread, this);
 }
 
-CANopenCommunication::CANopenCommunication(const std::string &device, bool startComm = false) : _device(device)
+CANopenCommunication::CANopenCommunication(const std::string &device, bool startComm) : _device(device)
 {
     // setting each payload length of each message
     _rxNMT.can_dlc = 2; // 2 bytes
@@ -76,6 +77,7 @@ bool CANopenCommunication::sendNMT(int node, NMTCOMMAND command)
     }
     
     // can_id for NMT message
+    // hoping this will be optimized out
     _txNMT.can_id = (FUNC_CODE::NMT << 7);
     
     // set command and node address
@@ -138,10 +140,11 @@ void CANopenCommunication::_recvThread()
                 // read the address
                 uint8_t nodeAddress = (_rxinternalCANframe.can_id & 0x7F);
                 
+                //TODO evaluate message for errors!!
+                
                 // update node with the respective address
                 //TODO evaluate _rxinternalCANframe's address
                 _nodes.at(nodeAddress)->update(std::move(_rxinternalCANframe));
-        
             }
         }
         //here, nothing (in readfds, in this case, the CAN socket) was ready to read
@@ -156,12 +159,11 @@ void CANopenCommunication::_recvThread()
     }
 }
 
-bool CANopenCommunication::AppendNode(CANopenNode& node)
+bool CANopenCommunication::AppendNode(CANopenNode *node)
 {
     // it's straightforward
     // TODO does it work?
-    if(_nodes.at(node.getAddress()) == nullptr)
-        _nodes.at(node.getAddress()) = &node;
+    _nodes.at(node->getAddress()) = node;
 }
 
 CANopenCommunication::~CANopenCommunication()
@@ -176,104 +178,9 @@ CANopenCommunication::~CANopenCommunication()
 }
 
 CANframe
-CANopenCommunication::sendSDO(const CANopenNode& node, const bool& doWrite, const uint16_t& index, const uint8_t& subindex, const CANopenDataType& dataType = CANopenDataType::INT32, const int& value = 0)
+CANopenCommunication::sendSDO(const CANopenNode &node, const bool &doWrite, const IndexSubindex&indexSubIndex, const CANopenDataType &dataType, const int &value = 0)
 {
-    // flag for error at data
-    bool dataError = false;
-    
-    // amount of data inn bytes that will not be used in this SDO message (related to n value of the SDO message)
-    uint8_t invalidData = 4;
-    
-    // analise the type of data
-    switch(dataType)
-    {
-        case CANopenDataType::INT8:
-        case CANopenDataType::UINT8:
-            invalidData = 4 - 1;
-            dataError = ((value >> 8) != 0);
-            break;
-        case CANopenDataType::INT16:
-        case CANopenDataType::UINT16:
-            invalidData = 4 - 2;
-            dataError = ((value >> 8*2) != 0);
-            break;
-        case CANopenDataType::INT32:
-        case CANopenDataType::UINT32:
-            invalidData = 4 - 4;
-            break;
-        default:
-            //if read, do nothing
-            if(doWrite)
-            {
-                dataError = true;
-            }
-    }
-    
-    // if error, print so
-    if(dataError)
-    {
-        throw std::invalid_argument("maximum type expected is 4 bytes! (CANopenCommunication.cpp:" + std::to_string(__LINE__) + ")\n");
-    }
-    
-    // message that will return
-    CANframe SDOmessage;
-    
-    // amount of bytes used
-    SDOmessage.can_dlc = 8;
-    
-    // SDO message ID
-    SDOmessage.can_id = 0x600 + node.getAddress();
-    
-    // alias for the first byte of data (command byte for SDO message)
-    uint8_t& commandByte = SDOmessage.data[0];
-    
-    // set object index
-    SDOmessage.data[1] = index & 0xFF;
-    SDOmessage.data[2] = index >> 8;
-    
-    // set object subindex
-    SDOmessage.data[3] = subindex;
-    
-    // data for payload of SDO message
-    std::array<uint8_t, 4> data{};
-    
-    // if it is and SDO download message (that writes in the node that receives the message - the server)
-    if (doWrite) //SDO download
-    {
-        //client command specifier (ccs)
-        uint8_t ccs = 1;
-        //message is not segmented!
-        uint8_t expedited = 1;
-        //size IS indicated
-        uint8_t size = 1;
-        
-        // commandByte is made of (from MSB to LSB): ccs (3bits), 1 reserved bit, n (2bits), e (1bit), s (1bit)
-        commandByte = (ccs << 5) | (invalidData << 2) | (expedited << 1) | size;
-        
-        // set data (for payload)
-        for(int i = 0; i < (4 - invalidData); i++)
-        {
-            data.at(i) = (value >> 8*i) & (0xFF);
-        }
-    }
-    else // read: SDO upload
-    {
-        //client command specifier (ccs)
-        uint8_t ccs = 2;
-    
-        // commandByte is made of (from MSB to LSB): ccs (3bits), 1 reserved bit, n (2bits), e (1bit), s (1bit)
-        // online ccs is needed for upload (read)
-        commandByte = (ccs << 5);
-    }
-    
-    // the first byte at data
-    SDOmessage.data[0] = commandByte;
-    
-    // set payload
-    for(int i = 0; i < 4; i++)
-    {
-        SDOmessage.data[i+4] = data.at(i);
-    }
+    CANframe SDOmessage = createSDO(node.getAddress(), doWrite, indexSubIndex, dataType, value);
     
     // lock socket mutex
     _commSocket_mtx.lock();

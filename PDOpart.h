@@ -15,7 +15,12 @@ public:
     /// \param index position of this part, inside of its PDO
     /// \param description descriptive string of this guy
     /// \param dataType type of this part
-    PDOpart(int8_t index, const std::string &description, CANopenDataType dataType);
+    PDOpart(int8_t index, const std::string &description, CANopenDataType dataType,
+            DictionaryEntry& dictionaryEntry);
+    
+    PDOpart();
+    
+    PDOpart(const PDOpart& other);
     
     /// return this explained in a string
     /// \return the explained string
@@ -40,7 +45,11 @@ public:
     /// Getter for the type name
     /// \return PDOpart's type name
     const std::string &getDataTypeName() const;
-
+    
+    int& getDictionaryEntryValueRef();
+    
+    PDOpart& operator=(const PDOpart&);
+    
 private:
     ///stores the type
     CANopenDataType _dataType;
@@ -52,6 +61,10 @@ private:
     int8_t _index;
     ///stores the description
     std::string _description;
+    
+    DictionaryEntry& _dictionaryEntry;
+    
+    const DictionaryEntry dummy;
 };
 
 #endif //PASSIVITY_PROJECT_PDOPART_H

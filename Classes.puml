@@ -1,6 +1,6 @@
 @startuml
 
-class NodePDO
+class PDOmessage
 {
     -_address
     -_payloadStruct
@@ -8,7 +8,7 @@ class NodePDO
     -_PDOnumber
     -_size
     -_payloadFromValues()
-    +NodePDO()
+    +PDOmessage()
     +getPayloadMap()
     +getPdoType()
     +getNumber()
@@ -78,6 +78,7 @@ class PDOpart
 {
     +PDOpart
     +toString()
+    
     +getIndex()
     +getDescription()
     +getDataTypeSize()
@@ -89,8 +90,8 @@ class PDOpart
 }
 
 CANopenCommunication -right- CANopenNode : use
-CANopenNode "1" *-right- "4 Rx and 4 Tx" NodePDO : contains
-NodePDO "1" *-right- "1..8" PDOpart : contains
+CANopenNode "1" *-right- "4 Rx and 4 Tx" PDOmessage : contains
+PDOmessage "1" *-right- "1..8" PDOpart : contains
 
 package CANopenTypes
 {

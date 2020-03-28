@@ -5,10 +5,9 @@
 #include <cassert>
 #include <sstream>
 #include <iomanip>
-#include "NodePDO.h"
-#include "utils.h"
+#include "PDOmessage.h"
 
-NodePDO::NodePDO(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpart> &payload) : _pdoType(pdoType), _address(cob_id)
+PDOmessage::PDOmessage(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpart> &payload) : _pdoType(pdoType), _address(cob_id)
 {
     //discover the PDO number according the cob_id and the PDO type
     if(_pdoType == PDOType::TX)
@@ -42,7 +41,7 @@ NodePDO::NodePDO(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpa
                                                       "[0x0281, 0x02FF] for txPDO2 or "
                                                       "[0x0381, 0x03FF] for txPDO3 or "
                                                       "[0x0481, 0x04FF] for txPDO4.\n";
-            throw std::invalid_argument(errorss.str());
+            throw std::invalid_argument(errorss.str() + " (PDOmessage.cpp:" + std::to_string(__LINE__) + ")\n");
         }
     }
     else //this->_pdoType == PDOType::RX
@@ -69,13 +68,13 @@ NodePDO::NodePDO(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpa
         }
         else //fail!
         {
-            std::stringstream errorss;
-            errorss << "COB-ID " << TO_HEX(cob_id) << " for txPDO not valid!\n"
+            std::stringstream error_ss;
+            error_ss << "COB-ID " << TO_HEX(cob_id) << " for txPDO not valid!\n"
                                                       "Valid ranges: [0x0201, 0x027F] for txPDO1 or "
                                                       "[0x0301, 0x037F] for txPDO2 or "
                                                       "[0x0401, 0x047F] for txPDO3 or "
                                                       "[0x0501, 0x057F] for txPDO4.\n";
-            throw std::invalid_argument(errorss.str());
+            throw std::invalid_argument(error_ss.str() + "(PDOmessage.cpp:" + std::to_string(__LINE__) + ")\n");
         }
     }
     
@@ -92,28 +91,28 @@ NodePDO::NodePDO(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpa
     //size must be from 1 to 8 bytes
     if(_size > 8 || _size < 1)
     {
-        throw std::invalid_argument("Received Payload Struct sums more than 8 bytes (it is summing " + std::to_string(_size) + ")!");
+        throw std::invalid_argument("Received Payload Struct sums more than 8 bytes (it is summing " + std::to_string(_size) + ")! (PDOmessage.cpp:" + std::to_string(__LINE__) + ")\n");
     }
     
 }
 
-PDOType NodePDO::getPdoType() const
+PDOType PDOmessage::getPdoType() const
 {
     return _pdoType;
 }
 
-unsigned char NodePDO::getNumber() const
+unsigned char PDOmessage::getNumber() const
 {
     return _PDOnumber;
 }
 
-unsigned int NodePDO::getAddress() const
+unsigned int PDOmessage::getAddress() const
 {
     return _address;
 }
 
 
-std::string NodePDO::toString() const
+std::string PDOmessage::toString() const
 {
     std::stringstream ret;
     
@@ -134,17 +133,17 @@ std::string NodePDO::toString() const
     return ret.str();
 }
 
-const std::vector<PDOpart>& NodePDO::getPayloadMap() const
+const std::vector<PDOpart>& PDOmessage::getPayloadMap() const
 {
     return _payloadStruct;
 }
 
-std::vector<int> NodePDO::valuesFromPayload(const CANframe& frame) const
+std::vector<int> PDOmessage::valuesFromPayload(const CANframe& frame) const
 {
     //there's no need of convert from payload to values in a transmit PDO
     if(_pdoType == PDOType::RX)
     {
-        throw std::invalid_argument("This is NOT a txPDO! This is a rxPDO! (NodePDO.cpp:" + std::to_string(__LINE__) + ")\n");
+        throw std::invalid_argument("This is NOT a txPDO! This is a rxPDO! (PDOmessage.cpp:" + std::to_string(__LINE__) + ")\n");
     }
     
     //the return to be readable vector of values
@@ -168,7 +167,7 @@ std::vector<int> NodePDO::valuesFromPayload(const CANframe& frame) const
         {
             //each value is store in Les Significant BYTE first fashion,
             //so each byte is left shift for 8*byteIndex bit positions and then is summed up to th currentValue
-            currentValue = currentValue + (frame.data[frameIndex++] << (8 * byteIndex));
+            currentValue = currentValue + (frame.data[frameIndex++] << (8u * byteIndex));
         }
         
         //storing in the return vector
@@ -179,7 +178,17 @@ std::vector<int> NodePDO::valuesFromPayload(const CANframe& frame) const
     return ret;
 }
 
-const PDOpart &NodePDO::at(int index) const
+const PDOpart &PDOmessage::at(int index) const
 {
     return _payloadStruct.at(index);
+}
+
+PDOmessage::PDOmessage() : _address(0), _PDOnumber(0), _pdoType(PDOType::RX), _size(0), _payloadStruct({PDOpart()})
+{
+
+}
+
+uint8_t PDOmessage::getSize()
+{
+    return _size;
 }
