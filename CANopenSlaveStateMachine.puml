@@ -1,0 +1,32 @@
+@startuml
+scale 600 width
+
+title from **EPOS Firmware Specification** (pg 48) and\n**CANopen explained** site (CSS eletronics)
+
+state SlaveStateDiagram {
+    Initialization -> PreOperational  : Automatically
+    PreOperational --> Operational : NMT_01
+    Operational --> PreOperational : NMT_80
+    PreOperational --> Stopped : NMT_02
+    Operational --> Stopped : NMT_02
+    Operational --> Initialization : NMT_81 (or 82?)
+    Stopped --> PreOperational : NMT_80
+    Stopped --> Operational : NMT_01
+    Stopped --> Initialization : NMT_81 (or 82?)
+
+    Initialization: Stuff internally done in the device
+    PreOperational: Only SDO messages are allowed.
+    PreOperational: This state is used to setup the device.
+    Operational: PDO communication occurs in this state.
+    Stopped: very self explanatory
+}
+
+[*] --> Initialization : PowerOn
+
+NMTmessages: 000#01.00 - to Operational
+NMTmessages: 000#02.00 - to Stopped
+NMTmessages: 000#80.00 - to PreOperational
+NMTmessages: 000#81.00 - **Reset Node**
+NMTmessages: 000#82.00 - **Reset Communication**
+
+@enduml
