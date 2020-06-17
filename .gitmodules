@@ -1,6 +1,0 @@
-[submodule "CANopenNode"]
-	path = CANopenNode
-	url = https://github.com/CANopenNode/CANopenNode
-[submodule "CANopenSocket"]
-	path = CANopenSocket
-	url = https://github.com/CANopenNode/CANopenSocket
