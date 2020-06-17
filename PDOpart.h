@@ -15,7 +15,7 @@ public:
     /// \param index position of this part, inside of its PDO
     /// \param description descriptive string of this guy
     /// \param dataType type of this part
-    PDOpart(int8_t index, const std::string &description, CANopenDataType dataType,
+    PDOpart(uint8_t index, const std::string &description, CANopenDataType dataType,
             DictionaryEntry& dictionaryEntry);
     
     PDOpart();
@@ -51,16 +51,16 @@ public:
     PDOpart& operator=(const PDOpart&);
     
 private:
+    ///stores the index of this PDOpart inside of the PDO payload
+    uint8_t _index;
+    ///stores the description of thiss PDOpart
+    const std::string _description;
     ///stores the type
     CANopenDataType _dataType;
-    ///stores the size of the type
-    uint8_t _dataTypeSize;
     ///stores the name of the data type
     std::string _dataTypeName;
-    ///stores the index of this PDOpart inside of the PDO payload
-    int8_t _index;
-    ///stores the description
-    std::string _description;
+    ///stores the size of the type
+    uint8_t _dataTypeSize;
     
     DictionaryEntry& _dictionaryEntry;
     

@@ -14,6 +14,7 @@
 #include <mutex>                //mutex
 #include <thread>               //thread
 #include <vector>               //vector
+#include <atomic>
 #include "CANopenNode.h"
 
 class CANopenCommunication {
@@ -24,7 +25,7 @@ public:
     /// Ctor for CANopen communication
     /// \param device name of device (e.g. can0, can1, dcan0, vcan1 etc)
     /// \param startComm should the communication be start?
-    CANopenCommunication(const std::string &device, bool startComm = false);
+    CANopenCommunication(const std::string device, bool startComm = false);
     
     /// Dtor
     ~CANopenCommunication();
@@ -81,30 +82,30 @@ private:
     std::array<CANopenNode*, 127> _nodes;
     
     ///linux CAN device name (like can0, can1, dcan0 etc)
-    std::string _device;
+    std::string _device = {0};
     
     ///the socket per se
-    Socket _commSocket;
+    Socket _commSocket = {0};
     ///address struct used to setup socket
-    CANaddress _address;
+    CANaddress _address = {0};
     ///interface request (?) to setup socket
-    InterfRequest _ifreq;
+    InterfRequest _ifreq = {0};
     ///current PDO message received
-    CANframe _txPDO;
+    CANframe _txPDO = {0};
     ///current PDO message to be transmited
-    CANframe _rxPDO;
+    CANframe _rxPDO = {0};
     ///current SDO message to be transmited
-    CANframe _txSDO;
+    CANframe _txSDO = {0};
     ///current SDO message received
-    CANframe _rxSDO;
+    CANframe _rxSDO = {0};
     ///current NMT message to be transmited
-    CANframe _txNMT;
+    CANframe _txNMT = {0};
     ///current NMT message received
-    CANframe _rxNMT;
+    CANframe _rxNMT = {0};
     ///TODO variable used to transmit any CAN message. Is this needed?!
-    CANframe _txinternalCANframe;
+    CANframe _txinternalCANframe = {0};
     ///variable that receives any CAN message received. Always overrided by the next reception
-    CANframe _rxinternalCANframe;
+    CANframe _rxinternalCANframe = {0};
     
     ///mutex for _txinternalCANframe
     std::mutex _txinternalCANframe_mtx;
@@ -128,10 +129,10 @@ private:
     ///thread object to hold receive thread
     std::thread _threadRecv;
     
-    bool _keepReceiveAlive;
+    std::atomic<bool> _keepReceiveAlive;
     
     ///the receive function for the receive thread
-    void _recvThread();
+    void _recvThread(void *);
 };
 
 

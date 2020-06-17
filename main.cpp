@@ -93,7 +93,7 @@ int main(int argc, char** argv)
     {
         if(print)
         {
-            std::cout << printCANframe(canopenComm.sendSDO(node1, true, 0x206200, CANopenDataType::INT32, round(200 * sin(p / 50.0))));
+            std::cout << printCANframe(canopenComm.sendSDO(node1, true, 0x206200, CANopenDataType::INT32, round(800 * sin(p / 50.0))));
             p++;
             if(p > 4000)
             {
@@ -125,6 +125,10 @@ int main(int argc, char** argv)
     
     std::cout << "Sending STOPPED" << std::endl;
     canopenComm.sendNMT(ANYCANOPENNODE, NMTCOMMAND::STOPPED);
+    
+    std::cout << "Sending RESET NODE" << std::endl;
+    canopenComm.sendNMT(ANYCANOPENNODE, NMTCOMMAND::RESET_APPLICATION);
+    
     SLEEP_ms(2000);
     
     return 0;

@@ -7,83 +7,14 @@
 #include <iomanip>
 #include "PDOmessage.h"
 
-PDOmessage::PDOmessage(const PDOType pdoType, uint16_t cob_id, const std::vector<PDOpart> &payload) : _pdoType(pdoType), _address(cob_id)
+PDOmessage::PDOmessage(const PDOType pdoType, uint8_t pdoNumber, uint8_t nodeAddress,
+                       const std::vector<PDOpart> &payload) : _pdoType(pdoType), _PDOnumber(pdoNumber), _cobid(createCOBID(_pdoType, pdoNumber, nodeAddress)), _payloadStruct(payload)
 {
-    //discover the PDO number according the cob_id and the PDO type
-    if(_pdoType == PDOType::TX)
-    {
-        if(0x181 <= cob_id && cob_id <= 0x01FF)
-        {
-            //txPDO1
-            _PDOnumber = 1;
-        }
-        else if(0x281 <= cob_id && cob_id <= 0x02FF)
-        {
-            //txPDO2
-            _PDOnumber = 2;
-        }
-        else if(0x381 <= cob_id && cob_id <= 0x03FF)
-        {
-            //txPDO3
-            _PDOnumber = 3;
-        }
-        else if(0x481 <= cob_id && cob_id <= 0x04FF)
-        {
-            //txPDO4
-            _PDOnumber = 4;
-        }
-        else //fail!
-        {
-            //if non of the above, something is wrong
-            std::stringstream errorss;
-            errorss << "COB-ID " << TO_HEX(cob_id) << " for txPDO not valid!\n"
-                                                      "Valid ranges: [0x0181, 0x01FF] for txPDO1 or "
-                                                      "[0x0281, 0x02FF] for txPDO2 or "
-                                                      "[0x0381, 0x03FF] for txPDO3 or "
-                                                      "[0x0481, 0x04FF] for txPDO4.\n";
-            throw std::invalid_argument(errorss.str() + " (PDOmessage.cpp:" + std::to_string(__LINE__) + ")\n");
-        }
-    }
-    else //this->_pdoType == PDOType::RX
-    {
-        if(0x201 <= cob_id && cob_id <= 0x027F)
-        {
-            //rxPDO1
-            _PDOnumber = 1;
-        }
-        else if(0x301 <= cob_id && cob_id <= 0x037F)
-        {
-            //rxPDO2
-            _PDOnumber = 2;
-        }
-        else if(0x401 <= cob_id && cob_id <= 0x047F)
-        {
-            //rxPDO3
-            _PDOnumber = 3;
-        }
-        else if(0x501 <= cob_id && cob_id <= 0x057F)
-        {
-            //rxPDO4
-            _PDOnumber = 4;
-        }
-        else //fail!
-        {
-            std::stringstream error_ss;
-            error_ss << "COB-ID " << TO_HEX(cob_id) << " for txPDO not valid!\n"
-                                                      "Valid ranges: [0x0201, 0x027F] for txPDO1 or "
-                                                      "[0x0301, 0x037F] for txPDO2 or "
-                                                      "[0x0401, 0x047F] for txPDO3 or "
-                                                      "[0x0501, 0x057F] for txPDO4.\n";
-            throw std::invalid_argument(error_ss.str() + "(PDOmessage.cpp:" + std::to_string(__LINE__) + ")\n");
-        }
-    }
-    
-    //store payload configuration
-    _payloadStruct = payload;
     //calculate useful PDO size in bytes
     _size = 0;
+    
     //look at PDO configuration to get the payload size
-    for(int8_t i = 0; i < _payloadStruct.size(); i++)
+    for(uint8_t i = 0; i < _payloadStruct.size(); i++)
     {
         _size += _payloadStruct[i].getDataTypeSize();
     }
@@ -106,9 +37,9 @@ unsigned char PDOmessage::getNumber() const
     return _PDOnumber;
 }
 
-unsigned int PDOmessage::getAddress() const
+unsigned int PDOmessage::getCOBID() const
 {
-    return _address;
+    return _cobid;
 }
 
 
@@ -121,7 +52,7 @@ std::string PDOmessage::toString() const
     //and its number
         << "PDO" << static_cast<int16_t>(_PDOnumber)
     //and its address
-        << std::setw(7) << TO_HEX(_address)
+        << std::setw(7) << TO_HEX(_cobid)
         << std::endl;
     
     //and each one of its parts
@@ -165,8 +96,8 @@ std::vector<int> PDOmessage::valuesFromPayload(const CANframe& frame) const
         //walking through the PDOpart
         for(byteIndex = 0; byteIndex < pdoPart.getDataTypeSize(); byteIndex++)
         {
-            //each value is store in Les Significant BYTE first fashion,
-            //so each byte is left shift for 8*byteIndex bit positions and then is summed up to th currentValue
+            //each value is store in Less Significant BYTE first fashion,
+            //so each byte is left shift for 8*byteIndex bit positions and then is summed up to the currentValue
             currentValue = currentValue + (frame.data[frameIndex++] << (8u * byteIndex));
         }
         
@@ -183,7 +114,7 @@ const PDOpart &PDOmessage::at(int index) const
     return _payloadStruct.at(index);
 }
 
-PDOmessage::PDOmessage() : _address(0), _PDOnumber(0), _pdoType(PDOType::RX), _size(0), _payloadStruct({PDOpart()})
+PDOmessage::PDOmessage() : _pdoType(PDOType::RX), _PDOnumber(0), _cobid(0), _payloadStruct({PDOpart()}), _size(0)
 {
 
 }

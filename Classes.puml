@@ -2,7 +2,7 @@
 
 class PDOmessage
 {
-    -_address
+    -_cobid
     -_payloadStruct
     -_pdoType
     -_PDOnumber
@@ -24,11 +24,11 @@ class CANopenNode
     +CANopenNode()
     +getTxPDO_COB_ID()
     +getRxPDO_COB_ID()
-    +getAddress()
+    +getCOBID()
     +update()
     +hasNews()
     +allPDOtoString()
-    -_address
+    -_cobid
     -_mode
     -_txPDOarrayInterface
     -_rxPDOarrayInterface
@@ -51,7 +51,7 @@ class CANopenCommunication
     +startCommunication()
     -_nodes
     -_device
-    -_address
+    -_cobid
     -_ifreq
     -_txPDO
     -_rxPDO

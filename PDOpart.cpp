@@ -15,7 +15,7 @@ std::stringstream PDOpart::toString() const
     return ss;
 }
 
-PDOpart::PDOpart(int8_t index, const std::string &description, CANopenDataType dataType,
+PDOpart::PDOpart(uint8_t index, const std::string &description, CANopenDataType dataType,
                  DictionaryEntry& dictionaryEntry) : _index(index), _description(description), _dataType(dataType), _dictionaryEntry(dictionaryEntry)
 {
     //setting type name and size
@@ -102,10 +102,11 @@ PDOpart::PDOpart(const PDOpart &other): _index(other._index), _description(other
 
 PDOpart &PDOpart::operator=(const PDOpart& other)
 {
-    /*if (this != &other) { // self-assignment check expected
-        this->dummy
-        }
-        std::copy(other.mArray, other.mArray + other.size, mArray);
-    }*/
+//    if (this != &other) { // self-assignment check expected
+//        this->dummy
+//        }
+//        std::copy(other.mArray, other.mArray + other.size, mArray);
+//    }
+
     return *this;
 }

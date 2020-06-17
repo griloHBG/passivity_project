@@ -41,7 +41,7 @@ std::array<unsigned int, 4> CANopenNode::getTxPDO_COB_ID() const
     
     for(int i = 0; i < 4; i++)
     {
-        cob_ids.at(i) = _txPDOarrayInterface.at(i).getAddress();
+        cob_ids.at(i) = _txPDOarrayInterface.at(i).getCOBID();
     }
     return cob_ids;
 }
@@ -52,7 +52,7 @@ std::array<unsigned int, 4> CANopenNode::getRxPDO_COB_ID() const
     
     for(int i = 0; i < 4; i++)
     {
-        cob_ids.at(i) = _rxPDOarrayInterface.at(i).getAddress();
+        cob_ids.at(i) = _rxPDOarrayInterface.at(i).getCOBID();
     }
     return cob_ids;
 }
@@ -70,7 +70,7 @@ void CANopenNode::configurePDOs(std::array<PDOmessage, 4> txPDOarrayInterface,
     _rxPDOarrayInterface = std::move(rxPDOarrayInterface);
     
     std::vector<PDOpart> vecPDOpart;
-    int iPDOmsg, iPDOpart;
+    unsigned int iPDOmsg, iPDOpart;
     
     for(iPDOmsg = 0; iPDOmsg < _txPDOarrayInterface.size(); iPDOmsg++)
     {
@@ -94,7 +94,7 @@ void CANopenNode::configurePDOs(std::array<PDOmessage, 4> txPDOarrayInterface,
 }
 
 /*CANopenNode::CANopenNode(const CANopenNode &otherNode)
-        : _address(otherNode._address), _mode(otherNode._mode), _rxPDOarrayInterface(otherNode._rxPDOarrayInterface), _txPDOarrayInterface(otherNode._txPDOarrayInterface)
+        : _cobid(otherNode._cobid), _mode(otherNode._mode), _rxPDOarrayInterface(otherNode._rxPDOarrayInterface), _txPDOarrayInterface(otherNode._txPDOarrayInterface)
 {
     throw std::invalid_argument("COOOPY! (CANopenNode.cpp:" + std::to_string(__LINE__));
 }*/
@@ -164,7 +164,7 @@ void CANopenNode::update(CANframe&& frame)
     
         auxPayload = _txPDOarrayInterface.at(PDOindex).valuesFromPayload(frame);
         
-        for(int i = 0; i < auxPayload.size(); i++)
+        for(unsigned int i = 0; i < auxPayload.size(); i++)
         {
             _txPDOvalues.at(PDOindex).at(i) = auxPayload.at(i);
         }
@@ -188,7 +188,7 @@ std::stringstream CANopenNode::allPDOtoString()
     std::stringstream ret;
     
     // counters
-    int pdoIndex = 0, partIndex = 0;
+    unsigned int pdoIndex = 0, partIndex = 0;
     
     // for each
     for(pdoIndex = 0; pdoIndex < 4; pdoIndex++)
@@ -206,5 +206,5 @@ std::stringstream CANopenNode::allPDOtoString()
 CANframe
 CANopenNode::createSDO(const bool &doWrite, const DictionaryEntry& entry, const int &value)
 {
-    return ::createSDO(this->_address, doWrite, std::get<INDEXSUBINDEX>(entry), std::get<TYPE>(entry), std::get<VALUE>(entry));
+    return ::createSDO(this->_address, doWrite, std::get<INDEXSUBINDEX>(entry), std::get<TYPE>(entry), value);
 }

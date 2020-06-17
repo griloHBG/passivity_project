@@ -104,9 +104,9 @@ enum CANopenNodeEvent
 enum PDOType
 {
     ///Transmit type
-    TX,
+    TX = 0x00,
     ///Receive type
-    RX
+    RX = 0x01
 };
 
 ///CANopen data types according Maxon Documentation
@@ -167,7 +167,7 @@ inline std::string CANopenDataTypeToString(CANopenDataType type)
             break;
     }
     
-    ret;
+    return ret;
 }
 
 /*typedef struct IndexSubindex

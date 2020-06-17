@@ -3,7 +3,7 @@
 //
 
 #include "CANopenUtils.h"
-
+/*
 template <typename T>
 constexpr auto type_name()
 {
@@ -25,7 +25,7 @@ constexpr auto type_name()
     name.remove_suffix(suffix.size());
     return name;
 }
-
+*/
 
 std::string printCANframe(const can_frame& frame)
 {
@@ -148,4 +148,31 @@ CANframe createSDO(const uint8_t address, const bool &doWrite, const IndexSubind
     }
     
     return SDOmessage;
+}
+
+unsigned int createCOBID(PDOType pdoType, uint8_t pdoNumber, uint8_t nodeAddress)
+{
+    /*
+    ///TXPDO1 message
+    SEND_PDO1   = 0x03,
+    ///RXPDO1 message
+    RECV_PDO1   = 0x04,
+    ///TXPDO2 message
+    SEND_PDO2   = 0x05,
+    ///RXPDO2 message
+    RECV_PDO2   = 0x06,
+    ///TXPDO3 message
+    SEND_PDO3   = 0x07,
+    ///RXPDO3 message
+    RECV_PDO3   = 0x08,
+    ///TXPDO4 message
+    SEND_PDO4   = 0x09,
+    ///RXPDO4 message
+    RECV_PDO4   = 0x0A,
+     */
+    
+    uint8_t pdoFuncCode = 0x03 + static_cast<uint8_t>(pdoType) + 2*(pdoNumber-1);
+    
+    return (pdoFuncCode << 7) | nodeAddress;
+    
 }

@@ -12,16 +12,18 @@
 #include <linux/can.h>
 #include <iostream>
 #include "PDOpart.h"
+#include "CANopenUtils.h"
 
 class PDOmessage
 {
 public:
     /// Ctor for this PDOmessage class
     /// \param pdoType PDO's type: receive (RX) or transmit (TX). From the point of view of the real CANopen node.
-    /// \param cob_id composition of the PDO's function (from 0b0011 to 0b1010) and node address
+    /// \param pdoNumber PDO's number (1, 2, 3 or 4)
     /// \param payload the configuration of the current PDO using vector of PDO part.
     //TODO: there's no need to enter with cob_id! function is predefined and the address if from the node!
-    PDOmessage(PDOType pdoType, uint16_t cob_id, const std::vector<PDOpart> &payload);
+    PDOmessage(const PDOType pdoType, uint8_t pdoNumber, uint8_t nodeAddress,
+               const std::vector<PDOpart> &payload);
     
     PDOmessage();
     
@@ -39,7 +41,7 @@ public:
     
     /// Getter to address
     /// \return this PDO address
-    unsigned int getAddress() const;
+    unsigned int getCOBID() const;
     
     /// Converts this PDO to a readable string. Usefull to assure that thaPDO was correctly configured
     /// \return String explaining this PDOmessage configuration
@@ -75,17 +77,18 @@ public:
     uint8_t getSize();
     
 private:
-    ///PDO's address
-    uint16_t _address;
-    
-    ///Stores how the PDO is configured (index position, size, description...)
-    std::vector<PDOpart> _payloadStruct;
     
     ///PDO type of this object (transmit or receive)
     PDOType _pdoType;
     
     ///PDO's number (PDO1, PDO2, PDO3 or PDO4)
     unsigned char _PDOnumber;
+    
+    ///PDO's address
+    uint16_t _cobid;
+    
+    ///Stores how the PDO is configured (index position, size, description...)
+    std::vector<PDOpart> _payloadStruct;
     
     ///Actual PDO size (less or equal than 8 bytes)
     uint8_t _size;

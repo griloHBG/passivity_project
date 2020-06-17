@@ -30,16 +30,17 @@ bool CANopenCommunication::startCommunication()
     _address.can_ifindex = _ifreq.ifr_ifindex;
     
     // binding address to socket
+    // although
     bind(_commSocket, (Address*)&(_address), sizeof(_address));
     
     // a flag that helps to stop the receive thread
     _keepReceiveAlive = true;
     
     // stating the receive thread!
-    _threadRecv = std::thread(&CANopenCommunication::_recvThread, this);
+    _threadRecv = std::thread(&CANopenCommunication::_recvThread, this, nullptr);
 }
 
-CANopenCommunication::CANopenCommunication(const std::string &device, bool startComm) : _device(device)
+CANopenCommunication::CANopenCommunication(const std::string device, bool startComm) : _device(device), _address({0})
 {
     // setting each payload length of each message
     _rxNMT.can_dlc = 2; // 2 bytes
@@ -84,8 +85,12 @@ bool CANopenCommunication::sendNMT(int node, NMTCOMMAND command)
     _txNMT.data[0] = command;
     _txNMT.data[1] = node;
     
+    _commSocket_mtx.lock();
+    
     // finally write it to the CAN bus
     write(_commSocket, &(_txNMT), sizeof(CANframe));
+    
+    _commSocket_mtx.unlock();
     
     // unlock NMT message
     _txNMT_mtx.unlock();
@@ -93,7 +98,8 @@ bool CANopenCommunication::sendNMT(int node, NMTCOMMAND command)
     return false;
 }
 
-void CANopenCommunication::_recvThread()
+
+void CANopenCommunication::_recvThread(void *)
 {
     // timeout to select call
     struct timeval tv{0, 1000}; //1 millissecond
@@ -110,20 +116,19 @@ void CANopenCommunication::_recvThread()
     {
         // lock socket mutex
         _commSocket_mtx.lock();
-        // lock internal receive CANframe buffer
-        _rxinternalCANframe_mtx.lock();
         
         // reset set of read file descriptors
         FD_ZERO(&readfds);
         // add socket file descriptor to readfds set
         FD_SET(_commSocket, &readfds);
         // wait for something to be readable at readfds or until the tv timeout
+        tv.tv_sec = 0;
+        tv.tv_usec = 0;
         selectRet = select(_commSocket + 1, &readfds, NULL, NULL, &tv);
         
         // if return from select if -1, something went very wrong.
         if(selectRet == -1)
         {
-            _rxinternalCANframe_mtx.unlock();
             _commSocket_mtx.unlock();
             throw std::runtime_error("select call returned -1 (CANopenCommunication.cpp:" + std::to_string(__LINE__) + ")!\n");
         }
@@ -144,18 +149,16 @@ void CANopenCommunication::_recvThread()
                 
                 // update node with the respective address
                 //TODO evaluate _rxinternalCANframe's address
+                //TODO do not use .at because is slower (maybe compiling optimization helps with it?)
                 _nodes.at(nodeAddress)->update(std::move(_rxinternalCANframe));
             }
         }
-        //here, nothing (in readfds, in this case, the CAN socket) was ready to read
+        //here, nothing (in readfds, in this case, the CAN socket _commSocket) was ready to read
         else //selectRet == 0
         {
             // unlock socket mutex
             _commSocket_mtx.unlock();
         }
-        
-        // unlock internal read frame mutex
-        _rxinternalCANframe_mtx.unlock();
     }
 }
 
@@ -171,8 +174,14 @@ CANopenCommunication::~CANopenCommunication()
     // on destruction
     // let receive die
     _keepReceiveAlive = false;
-    // wait for it to join
-    _threadRecv.join();
+    
+    // if joinable
+    if(_threadRecv.joinable())
+    {
+        // wait for it to join
+        _threadRecv.join();
+    }
+    
     // close communication socket
     close(_commSocket);
 }
